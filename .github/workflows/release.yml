@@ -1,0 +1,29 @@
+# Builds ZeitStarter.exe on a GitHub Windows runner and attaches it to a release.
+# Trigger: push a tag starting with "v", e.g. v1.0.0 (GitHub Desktop: History → right-click commit → Create Tag → Push origin)
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: cmd
+        run: |
+          "%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /optimize /codepage:65001 /out:ZeitStarter.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll ZeitStarter.cs
+      - name: Checksum
+        shell: pwsh
+        run: (Get-FileHash ZeitStarter.exe -Algorithm SHA256).Hash + "  ZeitStarter.exe" | Out-File -Encoding ascii ZeitStarter.exe.sha256
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ZeitStarter.exe
+            ZeitStarter.exe.sha256
